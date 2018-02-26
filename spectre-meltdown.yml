@@ -1,0 +1,39 @@
+---
+- name: Search spectre & meltdown vulnerabilities
+  hosts: all 
+  gather_facts: False 
+  vars:    
+        chkscript: spectre-meltdown--a2f5749.sh
+        log1: /root/microcodelog.txt
+        log2: /root/patchlog.txt
+  remote_user: root
+
+  tasks:
+  - name: clean old logs
+    local_action:
+      shell > {{ log1 }} ; > {{ log2 }}
+    run_once: True
+  - name: copy check script
+    copy: 
+      src: ./files/{{chkscript}} 
+      dest: /tmp/{{chkscript}} 
+  - name: Execute check script
+    script: /tmp/{{chkscript}}
+    register: chkrs
+    ignore_errors: True
+  - name: check result for microcode 
+    debug:
+      msg: "{{inventory_hostname}} is vulnerable!!! It need update CPU microcode!"
+    when: '"Variant #2 (Spectre): \u001b[1;31mVulnerable" in chkrs.stdout'
+  - name: log host that need to update CPU microcode 
+    local_action:
+      shell echo "{{ inventory_hostname }}" >> {{ log1 }}
+    when: '"Variant #2 (Spectre): \u001b[1;31mVulnerable" in chkrs.stdout'
+  - name: check result for patch 
+    debug:
+      msg: "{{inventory_hostname}} is vulnerable!!! It need pacth!"
+    when: '"Variant #1 (Spectre): \u001b[1;31mVulnerable" in chkrs.stdout or "Variant #3 (Meltdown): \u001b[1;31mVulnerable" in chkrs.stdout'
+  - name: log host that need to patch 
+    local_action:
+      shell echo "{{ inventory_hostname }}" >> {{ log2 }}
+    when: '"Variant #1 (Spectre): \u001b[1;31mVulnerable" in chkrs.stdout or "Variant #3 (Meltdown): \u001b[1;31mVulnerable" in chkrs.stdout'

@@ -1,0 +1,6 @@
+# Please edit your own host file
+localhost
+app1.example.com
+app2.example.com
+ansible.example.com
+192.168.0.33
